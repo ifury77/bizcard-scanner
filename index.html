@@ -118,6 +118,7 @@
       <div class="field-wrap"><label>Work phone</label><input id="f-work" type="tel" placeholder="+65 6xxx xxxx"></div>
       <div class="field-wrap full"><label>Email</label><input id="f-email" type="email" placeholder="email@company.com"></div>
       <div class="field-wrap full"><label>Website</label><input id="f-url" type="url" placeholder="www.company.com"></div>
+      <div class="field-wrap full"><label>Address</label><input id="f-address" type="text" placeholder="Street, City, Country"></div>
     </div>
     <div class="btn-row">
       <button class="btn primary" id="save-btn" onclick="saveContact()">
@@ -235,7 +236,7 @@
             role: 'user',
             content: [
               { type: 'image', source: { type: 'base64', media_type: imageMime, data: imageBase64 } },
-              { type: 'text', text: 'Extract contact information from this business card. Return ONLY a raw JSON object with these exact fields: name, org, title, mobile, workPhone, email, website. Use empty string "" for any missing fields. No markdown formatting, no code blocks, no explanation — just the raw JSON object.' }
+              { type: 'text', text: 'Extract contact information from this business card. Return ONLY a raw JSON object with these exact fields: name, org, title, mobile, workPhone, email, website, address. Use empty string "" for any missing fields. No markdown formatting, no code blocks, no explanation — just the raw JSON object.' }
             ]
           }]
         })
@@ -286,6 +287,7 @@
     const work = document.getElementById('f-work').value.trim();
     const email = document.getElementById('f-email').value.trim();
     const url = document.getElementById('f-url').value.trim();
+    const address = document.getElementById('f-address').value.trim();
 
     const body = {
       names: [{ givenName: firstName, familyName: lastName }],
@@ -298,6 +300,7 @@
     if (work) body.phoneNumbers.push({ value: work, type: 'work' });
     if (email) body.emailAddresses.push({ value: email, type: 'work' });
     if (url) body.urls.push({ value: url.startsWith('http') ? url : 'https://' + url, type: 'work' });
+    if (address) body.addresses = [{ formattedValue: address, type: 'work' }];
 
     try {
       const resp = await fetch('https://people.googleapis.com/v1/people:createContact', {
@@ -322,7 +325,7 @@
 
   function resetAll() {
     changePhoto();
-    ['f-name','f-org','f-title','f-mobile','f-work','f-email','f-url'].forEach(id => document.getElementById(id).value = '');
+    ['f-name','f-org','f-title','f-mobile','f-work','f-email','f-url','f-address'].forEach(id => document.getElementById(id).value = '');
     hideStatus('save-status');
     const btn = document.getElementById('save-btn');
     btn.innerHTML = '👤 Add to Google Contacts';
