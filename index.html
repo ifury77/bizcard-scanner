@@ -214,7 +214,7 @@
     showStatus('extract-status', 'Analyzing business card with AI...', 'info');
 
     try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      const resp = await fetch('https://bizcard-scanner.sgp69k.workers.dev', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
