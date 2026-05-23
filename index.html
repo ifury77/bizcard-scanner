@@ -129,8 +129,13 @@
 <script>
   const CLIENT_ID = '682681225322-4u5sg9s16vlsiia90um8g1hfsr603u7l.apps.googleusercontent.com';
   const SCOPES = 'https://www.googleapis.com/auth/contacts https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
-  let accessToken = null;
+  let accessToken = localStorage.getItem("gtoken") || null;
   let imageBase64 = null;
+
+  // Auto-restore session if token exists
+  if (accessToken) {
+    fetchUserInfo();
+  }
   let imageMime = 'image/jpeg';
   let tokenClient = null;
 
@@ -148,6 +153,7 @@
           return;
         }
         accessToken = resp.access_token;
+        localStorage.setItem("gtoken", accessToken);
         fetchUserInfo();
       }
     });
@@ -174,6 +180,7 @@
 
   function signOut() {
     accessToken = null;
+    localStorage.removeItem("gtoken");
     document.getElementById('signin-area').style.display = 'block';
     document.getElementById('signed-in-area').style.display = 'none';
     document.getElementById('section-upload').classList.add('disabled-section');
