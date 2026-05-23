@@ -16,13 +16,24 @@ export default {
 
     try {
       const body = await request.json();
+
+      // Check if request contains a PDF document
+      const hasPDF = JSON.stringify(body).includes('"application/pdf"');
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01'
+      };
+
+      // Add beta header for PDF support
+      if (hasPDF) {
+        headers['anthropic-beta'] = 'pdfs-2024-09-25';
+      }
+
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
+        headers,
         body: JSON.stringify(body)
       });
 
