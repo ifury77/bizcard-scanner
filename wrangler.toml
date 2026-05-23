@@ -1,3 +1,7 @@
 name = "bizcard-scanner"
 main = "worker.js"
 compatibility_date = "2024-01-01"
+
+[[kv_namespaces]]
+binding = "PV_STORE"
+id = "f8dc662047904469843e16ed7a7df94f"
