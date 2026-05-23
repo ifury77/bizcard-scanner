@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Card → Google Contacts</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+  .app { background: #fff; border-radius: 16px; box-shadow: 0 2px 20px rgba(0,0,0,0.08); width: 100%; max-width: 560px; overflow: hidden; }
+  .app-header { background: #1a73e8; padding: 1.5rem; color: #fff; display: flex; align-items: center; gap: 12px; }
+  .app-header i { font-size: 28px; }
+  .app-header h1 { font-size: 18px; font-weight: 600; }
+  .app-header p { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+  .section { padding: 1.25rem 1.5rem; border-bottom: 1px solid #f0f0ee; }
+  .section:last-child { border-bottom: none; }
+  .section-label { font-size: 11px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; }
+  .section-label .num { width: 18px; height: 18px; background: #1a73e8; color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+  .google-btn { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border: 1px solid #dadce0; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; color: #3c4043; font-family: inherit; transition: background 0.15s, box-shadow 0.15s; }
+  .google-btn:hover { background: #f8f9fa; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .signed-row { display: flex; align-items: center; gap: 12px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; background: #e8f0fe; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #1a73e8; flex-shrink: 0; }
+  .avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+  .user-info p { font-size: 14px; font-weight: 500; color: #202124; }
+  .user-info span { font-size: 12px; color: #5f6368; }
+  .signout-btn { margin-left: auto; font-size: 12px; color: #1a73e8; background: none; border: none; cursor: pointer; padding: 4px 8px; border-radius: 4px; font-family: inherit; }
+  .signout-btn:hover { background: #e8f0fe; }
+  .upload-zone { border: 2px dashed #dadce0; border-radius: 10px; padding: 2rem 1rem; text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+  .upload-zone:hover { border-color: #1a73e8; background: #f8fbff; }
+  .upload-zone p { font-size: 14px; color: #5f6368; margin-top: 8px; }
+  .upload-zone span { font-size: 12px; color: #9aa0a6; }
+  .upload-icon { font-size: 36px; color: #9aa0a6; }
+  #card-input { display: none; }
+  #preview-img { max-width: 100%; max-height: 220px; border-radius: 8px; margin-top: 1rem; display: none; object-fit: contain; }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .field-wrap.full { grid-column: 1 / -1; }
+  .field-wrap label { font-size: 12px; color: #5f6368; font-weight: 500; }
+  .field-wrap input { font-size: 14px; padding: 8px 10px; border: 1px solid #dadce0; border-radius: 6px; color: #202124; font-family: inherit; transition: border-color 0.15s; width: 100%; }
+  .field-wrap input:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.15); }
+  .btn-row { display: flex; gap: 10px; margin-top: 1rem; flex-wrap: wrap; }
+  .btn { padding: 9px 18px; border-radius: 8px; border: 1px solid #dadce0; background: #fff; color: #3c4043; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; transition: background 0.15s; }
+  .btn:hover { background: #f8f9fa; }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+  .btn.primary { background: #1a73e8; border-color: #1a73e8; color: #fff; font-weight: 500; }
+  .btn.primary:hover { background: #1557b0; }
+  .btn.success { background: #34a853; border-color: #34a853; color: #fff; font-weight: 500; }
+  .status { font-size: 13px; padding: 10px 14px; border-radius: 8px; margin-top: 0.75rem; display: none; }
+  .status.info { background: #e8f0fe; color: #1a73e8; display: block; }
+  .status.success { background: #e6f4ea; color: #1e8e3e; display: block; }
+  .status.error { background: #fce8e6; color: #d93025; display: block; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .disabled-section { opacity: 0.4; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="app-header">
+    <div>
+      <h1>Business Card Scanner</h1>
+      <p>Upload a card → AI extracts details → Save to Google Contacts</p>
+    </div>
+  </div>
+
+  <div class="section" id="section-auth">
+    <div class="section-label"><span class="num">1</span> Sign in with Google</div>
+    <div id="signin-area">
+      <button class="google-btn" onclick="startGoogleAuth()">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z"/></svg>
+        Sign in with Google
+      </button>
+      <div class="status error" id="auth-error" style="display:none;"></div>
+    </div>
+    <div id="signed-in-area" style="display:none;">
+      <div class="signed-row">
+        <div class="avatar" id="user-avatar">?</div>
+        <div class="user-info">
+          <p id="user-name">Signed in</p>
+          <span id="user-email"></span>
+        </div>
+        <button class="signout-btn" onclick="signOut()">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section disabled-section" id="section-upload">
+    <div class="section-label"><span class="num">2</span> Upload business card</div>
+    <div class="upload-zone" onclick="document.getElementById('card-input').click()">
+      <input type="file" id="card-input" accept="image/*" onchange="handleImage(this)">
+      <div class="upload-icon">📷</div>
+      <p>Tap to upload or take a photo</p>
+      <span>JPG, PNG supported</span>
+    </div>
+    <img id="preview-img">
+    <div class="btn-row" id="extract-row" style="display:none;">
+      <button class="btn primary" id="extract-btn" onclick="extractContact()">
+        ✨ Extract contact details
+      </button>
+      <button class="btn" onclick="changePhoto()">Change photo</button>
+    </div>
+    <div class="status" id="extract-status"></div>
+  </div>
+
+  <div class="section disabled-section" id="section-review">
+    <div class="section-label"><span class="num">3</span> Review & save to Google Contacts</div>
+    <div class="field-grid">
+      <div class="field-wrap full"><label>Full name</label><input id="f-name" type="text" placeholder="Full name"></div>
+      <div class="field-wrap full"><label>Company</label><input id="f-org" type="text" placeholder="Company name"></div>
+      <div class="field-wrap full"><label>Job title</label><input id="f-title" type="text" placeholder="Job title"></div>
+      <div class="field-wrap"><label>Mobile</label><input id="f-mobile" type="tel" placeholder="+65 9xxx xxxx"></div>
+      <div class="field-wrap"><label>Work phone</label><input id="f-work" type="tel" placeholder="+65 6xxx xxxx"></div>
+      <div class="field-wrap full"><label>Email</label><input id="f-email" type="email" placeholder="email@company.com"></div>
+      <div class="field-wrap full"><label>Website</label><input id="f-url" type="url" placeholder="www.company.com"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="save-btn" onclick="saveContact()">
+        👤 Add to Google Contacts
+      </button>
+      <button class="btn" onclick="resetAll()">↩ Start over</button>
+    </div>
+    <div class="status" id="save-status"></div>
+  </div>
+</div>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+  const CLIENT_ID = '851947363847-pnk0qiuo6qm6dgt4dgukt7krg9o03ajl.apps.googleusercontent.com';
+  const SCOPES = 'https://www.googleapis.com/auth/contacts https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email';
+  let accessToken = null;
+  let imageBase64 = null;
+  let imageMime = 'image/jpeg';
+  let tokenClient = null;
+
+  function startGoogleAuth() {
+    if (!window.google) {
+      showStatus('auth-error', 'Google sign-in library not loaded yet. Please wait a moment and try again.', 'error');
+      return;
+    }
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: (resp) => {
+        if (resp.error) {
+          showStatus('auth-error', 'Sign-in failed: ' + resp.error, 'error');
+          return;
+        }
+        accessToken = resp.access_token;
+        fetchUserInfo();
+      }
+    });
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  }
+
+  function fetchUserInfo() {
+    fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + accessToken }
+    }).then(r => r.json()).then(u => {
+      document.getElementById('user-name').textContent = u.name || 'Signed in';
+      document.getElementById('user-email').textContent = u.email || '';
+      const av = document.getElementById('user-avatar');
+      if (u.picture) {
+        av.innerHTML = '<img src="' + u.picture + '" alt="avatar">';
+      } else {
+        av.textContent = (u.name || 'U').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+      }
+      document.getElementById('signin-area').style.display = 'none';
+      document.getElementById('signed-in-area').style.display = 'block';
+      document.getElementById('section-upload').classList.remove('disabled-section');
+    });
+  }
+
+  function signOut() {
+    accessToken = null;
+    document.getElementById('signin-area').style.display = 'block';
+    document.getElementById('signed-in-area').style.display = 'none';
+    document.getElementById('section-upload').classList.add('disabled-section');
+    document.getElementById('section-review').classList.add('disabled-section');
+  }
+
+  function handleImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    imageMime = file.type || 'image/jpeg';
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target.result;
+      imageBase64 = dataUrl.split(',')[1];
+      const img = document.getElementById('preview-img');
+      img.src = dataUrl;
+      img.style.display = 'block';
+      document.getElementById('extract-row').style.display = 'flex';
+      hideStatus('extract-status');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function changePhoto() {
+    document.getElementById('card-input').value = '';
+    document.getElementById('preview-img').style.display = 'none';
+    document.getElementById('extract-row').style.display = 'none';
+    document.getElementById('section-review').classList.add('disabled-section');
+    hideStatus('extract-status');
+    imageBase64 = null;
+  }
+
+  async function extractContact() {
+    if (!imageBase64) return;
+    const btn = document.getElementById('extract-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Extracting...';
+    showStatus('extract-status', 'Analyzing business card with AI...', 'info');
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: imageMime, data: imageBase64 } },
+              { type: 'text', text: 'Extract contact information from this business card. Return ONLY a raw JSON object with these exact fields: name, org, title, mobile, workPhone, email, website. Use empty string "" for any missing fields. No markdown formatting, no code blocks, no explanation — just the raw JSON object.' }
+            ]
+          }]
+        })
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json();
+        throw new Error(err.error?.message || 'API error ' + resp.status);
+      }
+
+      const data = await resp.json();
+      const text = data.content.map(b => b.text || '').join('');
+      const clean = text.replace(/```json|```/g, '').trim();
+      const contact = JSON.parse(clean);
+
+      document.getElementById('f-name').value = contact.name || '';
+      document.getElementById('f-org').value = contact.org || '';
+      document.getElementById('f-title').value = contact.title || '';
+      document.getElementById('f-mobile').value = contact.mobile || '';
+      document.getElementById('f-work').value = contact.workPhone || '';
+      document.getElementById('f-email').value = contact.email || '';
+      document.getElementById('f-url').value = contact.website || '';
+
+      document.getElementById('section-review').classList.remove('disabled-section');
+      document.getElementById('section-review').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showStatus('extract-status', '✓ Details extracted — review and edit below, then save.', 'success');
+    } catch(e) {
+      showStatus('extract-status', 'Extraction failed: ' + e.message, 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '✨ Extract contact details';
+  }
+
+  async function saveContact() {
+    if (!accessToken) { showStatus('save-status', 'Please sign in with Google first.', 'error'); return; }
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Saving...';
+
+    const name = document.getElementById('f-name').value.trim();
+    const parts = name.split(' ');
+    const firstName = parts[0] || '';
+    const lastName = parts.slice(1).join(' ') || '';
+    const org = document.getElementById('f-org').value.trim();
+    const title = document.getElementById('f-title').value.trim();
+    const mobile = document.getElementById('f-mobile').value.trim();
+    const work = document.getElementById('f-work').value.trim();
+    const email = document.getElementById('f-email').value.trim();
+    const url = document.getElementById('f-url').value.trim();
+
+    const body = {
+      names: [{ givenName: firstName, familyName: lastName }],
+      organizations: (org || title) ? [{ name: org, title: title }] : [],
+      phoneNumbers: [],
+      emailAddresses: [],
+      urls: []
+    };
+    if (mobile) body.phoneNumbers.push({ value: mobile, type: 'mobile' });
+    if (work) body.phoneNumbers.push({ value: work, type: 'work' });
+    if (email) body.emailAddresses.push({ value: email, type: 'work' });
+    if (url) body.urls.push({ value: url.startsWith('http') ? url : 'https://' + url, type: 'work' });
+
+    try {
+      const resp = await fetch('https://people.googleapis.com/v1/people:createContact', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!resp.ok) {
+        const e = await resp.json();
+        throw new Error(e.error?.message || 'API error ' + resp.status);
+      }
+      showStatus('save-status', '✓ ' + (name || 'Contact') + ' successfully added to Google Contacts!', 'success');
+      btn.innerHTML = '✓ Saved!';
+      btn.className = 'btn success';
+      btn.disabled = false;
+    } catch(e) {
+      showStatus('save-status', 'Save failed: ' + e.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = '👤 Add to Google Contacts';
+    }
+  }
+
+  function resetAll() {
+    changePhoto();
+    ['f-name','f-org','f-title','f-mobile','f-work','f-email','f-url'].forEach(id => document.getElementById(id).value = '');
+    hideStatus('save-status');
+    const btn = document.getElementById('save-btn');
+    btn.innerHTML = '👤 Add to Google Contacts';
+    btn.className = 'btn primary';
+    btn.disabled = false;
+  }
+
+  function showStatus(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    el.style.display = 'block';
+  }
+  function hideStatus(id) {
+    const el = document.getElementById(id);
+    el.style.display = 'none';
+    el.className = 'status';
+  }
+</script>
+</body>
+</html>
